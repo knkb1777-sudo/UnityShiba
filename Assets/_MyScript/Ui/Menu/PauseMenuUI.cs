@@ -15,7 +15,7 @@ public class PauseMenuUI : MonoBehaviour
     [SerializeField] private bool pauseWithTimeScale = true;
     [SerializeField] private bool unlockCursorOnOpen = true;
 
-    [Tooltip("ถ้าเปิด = ตอนเล่นเกมจะล็อคเมาส์และซ่อนเคอร์เซอร์ (เหมือน TPS)\nถ้าปิด = ตอนเล่นเกมจะเห็นเคอร์เซอร์ตลอด (เหมาะกับเกมคลิกทำฟาร์ม)")]
+    [Tooltip("Optional")]
     [SerializeField] private bool lockCursorWhenPlaying = false;
 
     [Header("UI Blockers (optional)")]
@@ -50,35 +50,25 @@ public class PauseMenuUI : MonoBehaviour
 
         if (player == null) return;
 
-        // ใส่เฉพาะ component บน Player ที่อยากปิดตอน Pause
-        // (ถ้าคุณใส่ไว้ใน extraDisable อยู่แล้ว ก็ไม่จำเป็นต้องใส่เพิ่มตรงนี้)
         var behaviours = player.GetComponentsInChildren<Behaviour>(true);
         foreach (var b in behaviours)
         {
             if (b == null) continue;
 
-            // อย่าปิดตัวเอง และอย่าปิด UI
             if (b == this) continue;
 
-            // กันพลาด: ถ้าเป็น InventoryUI หรือ PauseMenuUI ก็ไม่ต้องปิด
-            // (ใส่ชื่อไว้กัน compile error ถ้าไม่มีคลาส)
             if (b.GetType().Name == "InventoryUI") continue;
             if (b.GetType().Name == "PauseMenuUI") continue;
-
-            // เก็บไว้ เผื่อคุณอยากใช้ในอนาคต
-            // _autoDisable.Add(b);
         }
     }
 
     private void Update()
     {
-        // ถ้า Inventory เปิดอยู่ ให้ ESC ทำงานกับ Inventory (หรือไม่ก็แล้วแต่คุณ)
-        // ที่นี่เราจะให้ ESC เปิด/ปิด Pause เฉพาะตอน Inventory ไม่เปิด
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (InventoryUI.IsOpen) return;
+            if (InventoryMainUI.IsOpen) return;
 
-            // ถ้าอยู่ใน Settings แล้วกด ESC = กลับไปหน้า Pause
             if (_isPaused && settingsPanel != null && settingsPanel.activeSelf)
             {
                 CloseSettings();
@@ -92,13 +82,11 @@ public class PauseMenuUI : MonoBehaviour
 
     private void LateUpdate()
     {
-        // กันกรณีสคริปต์อื่นไปล็อคเมาส์ทับ (ช่วยแก้ “คลิกแล้วเมาส์หาย”)
         ApplyCursorState();
     }
 
     private void OnApplicationFocus(bool hasFocus)
     {
-        // เวลา alt-tab หรือคลิกกลับเข้าเกม ให้สถานะเมาส์ถูกต้องเสมอ
         if (hasFocus) ApplyCursorState();
     }
 
@@ -148,27 +136,21 @@ public class PauseMenuUI : MonoBehaviour
     {
         if (pauseWithTimeScale)
             Time.timeScale = paused ? 0f : 1f;
-
-        // ปิด component ที่คุณลากมาใส่เองตอน pause
         for (int i = 0; i < extraDisable.Count; i++)
         {
             var b = extraDisable[i];
             if (b != null) b.enabled = !paused;
         }
 
-        // (เผื่ออนาคต) ถ้าคุณอยากให้ auto disable ทำงาน ก็เปิดบรรทัดนี้
-        // for (int i = 0; i < _autoDisable.Count; i++) if (_autoDisable[i] != null) _autoDisable[i].enabled = !paused;
-
         ApplyCursorState();
     }
 
     private void ApplyCursorState()
     {
-        bool anyMenuOpen = _isPaused || InventoryUI.IsOpen;
+        bool anyMenuOpen = _isPaused || InventoryMainUI.IsOpen;
 
         if (anyMenuOpen)
         {
-            // เมนูเปิด -> ต้องเห็นเมาส์
             if (unlockCursorOnOpen)
             {
                 Cursor.visible = true;
@@ -176,8 +158,6 @@ public class PauseMenuUI : MonoBehaviour
             }
             return;
         }
-
-        // เมนูปิด -> สถานะเมาส์ตอนเล่นเกม
         if (lockCursorWhenPlaying)
         {
             Cursor.visible = false;
@@ -189,8 +169,6 @@ public class PauseMenuUI : MonoBehaviour
             Cursor.lockState = CursorLockMode.None;
         }
     }
-
-    // ---------------- Buttons ----------------
 
     public void OnButton_Play()
     {
@@ -205,8 +183,8 @@ public class PauseMenuUI : MonoBehaviour
 
     public void OnButton_SaveAndQuit()
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.SaveGame();
+        if (GameDataManager.Instance != null)
+            GameDataManager.Instance.SaveGame();
 
         Time.timeScale = 1f;
         SceneManager.LoadScene("MainMenu");

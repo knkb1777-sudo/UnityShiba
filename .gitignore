@@ -11,6 +11,7 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 *.log
+.~lock.*
 
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be commited to version control.
 *.blend1
@@ -30,6 +31,9 @@
 /[Aa]ssets/Plugins/Editor/JetBrains*
 # Jetbrains Rider personal-layer settings
 *.DotSettings.user
+/Assets/!SoStylized/
+/Assets/_MyObject/
+/Assets/Polyart/
 
 # Visual Studio cache directory
 .vs/
@@ -97,3 +101,13 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+/Assets/\!SoStylized/
+/Assets/_iMapFamShiba/
+/Assets/_iMapFamShiba/
+/Assets/_Material/
+/Assets/_MyObject/
+/Assets/Mesh Optimizer/
+/Assets/Polyart/
+/Assets/SkySeries Freebie/
+/Assets/StarterAssets/
+/Assets/TextMesh Pro/

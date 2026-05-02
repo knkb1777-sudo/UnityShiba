@@ -1,19 +1,17 @@
 using UnityEngine;
 
-public enum ItemCategory { Tool, Seed, Consumable, CraftingMaterial, FarmHelper }
+public enum ItemCategory { Base, Tools, Food, Structures, Resources, Seed, FarmHelper, Wearables }
 public enum ToolAction { None, Hoe, Water, Axe }
 
-/// <summary>หมวดหมู่สำหรับแสดงใน Day Summary — ตั้งค่าใน ItemSO แต่ละชิ้น</summary>
 public enum SellCategory { Farming, Fishing, Ore, Other }
 
 [CreateAssetMenu(menuName = "Items/Item")]
 public class ItemSO : ScriptableObject
 {
-    // ... (����������� ����ͧź) ...
-    // ���� Enum ��ҧ����ͤ�Ѻ
 
     [Header("Info")]
     public string itemName;
+    public int itemID;
     public Sprite icon;
 
     [Header("3D Visuals")]
@@ -33,7 +31,7 @@ public class ItemSO : ScriptableObject
     [Min(1)] public int maxStack = 99;
 
     [Header("Gameplay")]
-    public ItemCategory category = ItemCategory.Tool;
+    public ItemCategory category = ItemCategory.Tools;
     public ToolAction toolAction = ToolAction.None;
     public CropSO seedCrop;
 

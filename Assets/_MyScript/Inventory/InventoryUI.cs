@@ -4,31 +4,29 @@ using UnityEngine;
 // Starter Assets
 using StarterAssets;
 
-// Cinemachine (ถ้าใช้)
-using Cinemachine;
+using Unity.Cinemachine;
 
-// ถ้าใช้ Input System ใหม่ ให้เพิ่ม Scripting Define Symbol: ENABLE_INPUT_SYSTEM
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
 
-public class InventoryUI : MonoBehaviour
+public class InventoryMainUI : MonoBehaviour
 {
     [Header("Slots")]
     public InventorySlot[] slots;
 
     [Header("UI Root")]
-    public GameObject inventoryPanel;          // ลาก GameObject ที่เป็นหน้ากากอินเวนต์มาใส่ (เช่น InventoryPanel)
+    public GameObject inventoryPanel;          
 
     [Header("Freeze Control while open")]
-    public Transform player;                   // ลาก Player (ตัวที่มี ThirdPersonController/StarterAssetsInputs)
-    public bool unlockCursorOnOpen = true;     // เปิดเมาส์เมื่อเปิดอินเวนต์
-    public Behaviour[] extraDisable;           // ถ้ามีสคริปต์ custom ที่ควรปิดตอนเปิด UI
+    public Transform player;                  
+    public bool unlockCursorOnOpen = true;     
+    public Behaviour[] extraDisable;          
 
-    [Header("(Optional) หยุดเวลาเกมตอนเปิด")]
+    [Header("(Optional)")]
     public bool pauseWithTimeScale = false;
 
-    public static InventoryUI Instance { get; private set; }
+    public static InventoryMainUI Instance { get; private set; }
     public static bool IsOpen { get; private set; }
 
     readonly List<Behaviour> _toDisable = new List<Behaviour>();
@@ -38,9 +36,9 @@ public class InventoryUI : MonoBehaviour
     void Awake()
     {
         Instance = this;
-        if (inventoryPanel) inventoryPanel.SetActive(false);
+        // if (inventoryPanel) inventoryPanel.SetActive(false);
 
-        BuildDisableList();            // รวมคอมโพเนนต์ที่จะปิดไว้ล่วงหน้า
+        BuildDisableList();            
         _wasEnabled = new bool[_toDisable.Count];
     }
 
@@ -50,50 +48,40 @@ public class InventoryUI : MonoBehaviour
         if (IsOpen && Input.GetKeyDown(KeyCode.Escape)) Close();
     }
 
-    // ---------------------------------------
-    // รวบรวมคอมโพเนนต์ที่จะ "ปิดทับ" ตอนเปิด UI
-    // ---------------------------------------
     void BuildDisableList()
     {
         _toDisable.Clear();
 
-        // -------- ฝั่ง Player --------
         if (player != null)
         {
-            var tpc = player.GetComponent<ThirdPersonController>();
+            var tpc = player.GetComponent<PlayerController>();
             if (tpc) _toDisable.Add(tpc);
 
             var sai = player.GetComponent<StarterAssetsInputs>();
             if (sai) _toDisable.Add(sai);
 
 #if ENABLE_INPUT_SYSTEM
-            // ปิด PlayerInput = ตัดอินพุตทั้งหมด
             var pi = player.GetComponent<PlayerInput>();
             if (pi) _toDisable.Add(pi);
 #endif
-            // NOTE: CharacterController ไม่ใช่ Behaviour ที่เปิด/ปิดได้ จึงไม่ใส่ลงลิสต์
         }
-
-        // -------- ฝั่งกล้อง/Cinemachine --------
         var cam = Camera.main;
         if (cam)
         {
             var brain = cam.GetComponent<CinemachineBrain>();
             if (brain) _toDisable.Add(brain);
 
-            var cip = cam.GetComponent<CinemachineInputProvider>();
+            var cip = cam.GetComponent<CinemachineInputAxisController>();
             if (cip) _toDisable.Add(cip);
         }
 
-        // กรณีวาง InputProvider ไว้บน Virtual Camera
-        var vcam = FindAnyObjectByType<CinemachineVirtualCamera>();
+        var vcam = FindAnyObjectByType<CinemachineInputAxisController>();
         if (vcam)
         {
-            var cip2 = vcam.GetComponent<CinemachineInputProvider>();
+            var cip2 = vcam.GetComponent<CinemachineInputAxisController>();
             if (cip2) _toDisable.Add(cip2);
         }
 
-        // -------- อะไรที่อยากเพิ่มเอง --------
         if (extraDisable != null)
         {
             foreach (var b in extraDisable)
@@ -118,12 +106,10 @@ public class InventoryUI : MonoBehaviour
 
         if (inventoryPanel) inventoryPanel.SetActive(true);
 
-        // เผื่อมีการปรับอ้างอิงตอนรัน
         if (_toDisable.Count == 0) BuildDisableList();
         if (_wasEnabled == null || _wasEnabled.Length != _toDisable.Count)
             _wasEnabled = new bool[_toDisable.Count];
 
-        // ปิดคอมโพเนนต์ควบคุมการเคลื่อนที่/กล้อง
         for (int i = 0; i < _toDisable.Count; i++)
         {
             var b = _toDisable[i];
@@ -152,7 +138,7 @@ public class InventoryUI : MonoBehaviour
 
         if (inventoryPanel) inventoryPanel.SetActive(false);
 
-        // เปิดคอมโพเนนต์กลับตามสถานะเดิม
+
         for (int i = 0; i < _toDisable.Count; i++)
         {
             var b = _toDisable[i];
@@ -171,17 +157,12 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    // ---------------------------------------
-    // ฟังก์ชันเดิม: เพิ่มไอเทม + รวม stack
-    // (เรียกจาก pickup ฯลฯ)
-    // ---------------------------------------
     public bool AddItemToInventory(ItemSO item) => AddItemToInventory(item, 1);
 
     public bool AddItemToInventory(ItemSO item, int amount)
     {
         if (item == null || amount <= 0) return false;
 
-        // 1) รวมกับช่องเดิมก่อน ถ้า stack ได้
         if (item.isStackable)
         {
             foreach (var slot in slots)
@@ -193,7 +174,7 @@ public class InventoryUI : MonoBehaviour
                     if (canAdd > 0)
                     {
                         slot.amount += canAdd;
-                        slot.UpdateAmountText(); // ใช้วิธีเดิมของคุณ
+                        slot.UpdateAmountText();
                         amount -= canAdd;
                         if (amount <= 0) return true;
                     }
@@ -201,7 +182,6 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
-        // 2) หาช่องว่าง
         foreach (var slot in slots)
         {
             if (slot.item == null)
@@ -213,7 +193,7 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
-        Debug.Log("Inventory เต็ม!");
+        Debug.Log("Inventory ๏ฟฝ๏ฟฝ๏ฟฝ!");
         return amount <= 0;
     }
 }
